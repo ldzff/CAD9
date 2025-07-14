@@ -840,6 +840,11 @@ namespace RobTeach.Views
                         // The interpretation of P1, P2, P3 to calculate center, start/end angles
                         // in PopulateTrajectoryPoints and WriteSendDataToTempFile must be robust to this swap.
                     }
+                    else if (selectedTrajectory.PrimitiveType == "Polygon")
+                    {
+                        selectedTrajectory.Points.Reverse();
+                    }
+
 
                     PopulateTrajectoryPoints(selectedTrajectory); // Regenerate points for display
                     CurrentPassTrajectoriesListBox.Items.Refresh(); // Update display
@@ -1804,48 +1809,18 @@ namespace RobTeach.Views
                     switch (dxfEntity)
                     {
                         case DxfLwPolyline polyline:
-                            // Decompose polyline into individual segments
-                            for (int i = 0; i < polyline.Vertices.Count; i++)
+                            newTrajectory.PrimitiveType = "Polygon";
+                            var vertices = polyline.Vertices.Select(v => new Point(v.X, v.Y)).ToList();
+
+                            // Find the starting vertex (closest to bottom-left)
+                            int startIndex = FindBottomLeftVertexIndex(vertices);
+                            var orderedVertices = new List<Point>();
+                            for (int i = 0; i < vertices.Count; i++)
                             {
-                                var startVertex = polyline.Vertices[i];
-                                var endVertex = polyline.IsClosed ? polyline.Vertices[(i + 1) % polyline.Vertices.Count] : (i + 1 < polyline.Vertices.Count ? polyline.Vertices[i + 1] : null);
-
-                                if (endVertex == null) continue;
-
-                                var segmentTrajectory = new Trajectory();
-                                if (Math.Abs(startVertex.Bulge) < 1e-6) // It's a line
-                                {
-                                    segmentTrajectory.PrimitiveType = "Line";
-                                    segmentTrajectory.LineStartPoint = new DxfPoint(startVertex.X, startVertex.Y, 0);
-                                    segmentTrajectory.LineEndPoint = new DxfPoint(endVertex.X, endVertex.Y, 0);
-                                }
-                                else // It's an arc
-                                {
-                                    var arcPoints = GeometryUtils.ConvertBulgeToArcPoints(new DxfPoint(startVertex.X, startVertex.Y, 0), new DxfPoint(endVertex.X, endVertex.Y, 0), startVertex.Bulge);
-                                    if (arcPoints.HasValue)
-                                    {
-                                        segmentTrajectory.PrimitiveType = "Arc";
-                                        segmentTrajectory.ArcPoint1 = new TrajectoryPointWithAngles(arcPoints.Value.p1);
-                                        segmentTrajectory.ArcPoint2 = new TrajectoryPointWithAngles(arcPoints.Value.p2);
-                                        segmentTrajectory.ArcPoint3 = new TrajectoryPointWithAngles(arcPoints.Value.p3);
-                                    }
-                                    else
-                                    {
-                                        // Fallback to line if arc conversion fails
-                                        segmentTrajectory.PrimitiveType = "Line";
-                                        segmentTrajectory.LineStartPoint = new DxfPoint(startVertex.X, startVertex.Y, 0);
-                                        segmentTrajectory.LineEndPoint = new DxfPoint(endVertex.X, endVertex.Y, 0);
-                                    }
-                                }
-                                currentPass.Trajectories.Add(segmentTrajectory);
+                                orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
                             }
-                            trajectoryToSelect = currentPass.Trajectories.LastOrDefault();
-                            // Prevent the original polyline from being added as a single trajectory
-                            RefreshCurrentPassTrajectoriesListBox();
-                            RefreshCadCanvasHighlights();
-                            UpdateDirectionIndicator();
-                            UpdateOrderNumberLabels();
-                            return;
+                            newTrajectory.Points = orderedVertices;
+                            break;
                         case DxfLine line:
                             newTrajectory.PrimitiveType = "Line";
                             double p1DistSq = line.P1.X * line.P1.X + line.P1.Y * line.P1.Y + line.P1.Z * line.P1.Z;
@@ -3992,6 +3967,28 @@ namespace RobTeach.Views
             double maxY = points.Max(p => p.Y);
 
             return new Rect(minX, minY, maxX - minX, maxY - minY);
+        }
+
+        private int FindBottomLeftVertexIndex(List<Point> vertices)
+        {
+            if (vertices == null || vertices.Count == 0) return -1;
+
+            int bottomLeftIndex = 0;
+            double minDistance = double.MaxValue;
+
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var p = vertices[i];
+                // Simple distance to origin (0,0) - assuming Y is not flipped in this context
+                // A better approach would be to transform to screen coordinates if Y is flipped
+                double distance = Math.Sqrt(p.X * p.X + p.Y * p.Y);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    bottomLeftIndex = i;
+                }
+            }
+            return bottomLeftIndex;
         }
 
         private void FitToViewButton_Click(object sender, RoutedEventArgs e)

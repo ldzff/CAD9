@@ -148,6 +148,9 @@ namespace RobTeach.Models
                 case "Circle":
                     details = $"Circle (P1:{CirclePoint1.Coordinates}, P2:{CirclePoint2.Coordinates}, P3:{CirclePoint3.Coordinates})";
                     break;
+                case "Polygon":
+                    details = $"Polygon ({Points.Count} vertices)";
+                    break;
                 default:
                     // Use EntityType if PrimitiveType is not set or recognized, then fallback to DXF entity type
                     string typeDisplay = string.IsNullOrEmpty(PrimitiveType) ? (string.IsNullOrEmpty(EntityType) ? OriginalDxfEntity?.GetType().Name ?? "Unknown" : EntityType) : PrimitiveType;
