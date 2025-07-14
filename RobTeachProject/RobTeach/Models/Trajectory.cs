@@ -153,8 +153,15 @@ namespace RobTeach.Models
                     details = $"Circle (P1:{CirclePoint1.Coordinates}, P2:{CirclePoint2.Coordinates}, P3:{CirclePoint3.Coordinates})";
                     break;
                 case "Polygon":
-                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Trajectory.ToString(): Formatting polygon with {Vertices.Count} vertices.");
-                    details = $"Polygon {{{string.Join(",", Vertices.Select(v => $"({v.X:F2},{v.Y:F2})"))}}}";
+                    System.Diagnostics.Debug.WriteLine($"[LOG] Trajectory.ToString(): Formatting polygon with {Vertices.Count} vertices.");
+                    if (Vertices.Count > 0)
+                    {
+                        details = $"Polygon {{{string.Join(",", Vertices.Select(v => $"({v.X:F2},{v.Y:F2})"))}}}";
+                    }
+                    else
+                    {
+                        details = "Polygon (Vertices not populated)";
+                    }
                     break;
                 default:
                     // Use EntityType if PrimitiveType is not set or recognized, then fallback to DXF entity type

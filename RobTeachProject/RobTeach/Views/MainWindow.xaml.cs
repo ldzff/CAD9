@@ -439,11 +439,13 @@ namespace RobTeach.Views
 
         private void RefreshCurrentPassTrajectoriesListBox()
         {
+            Debug.WriteLine("[LOG] RefreshCurrentPassTrajectoriesListBox: Called.");
             CurrentPassTrajectoriesListBox.ItemsSource = null; // Clear existing items/binding
             if (_currentConfiguration.CurrentPassIndex >= 0 && _currentConfiguration.CurrentPassIndex < _currentConfiguration.SprayPasses.Count)
             {
                 var currentPass = _currentConfiguration.SprayPasses[_currentConfiguration.CurrentPassIndex];
                 CurrentPassTrajectoriesListBox.ItemsSource = currentPass.Trajectories;
+                Debug.WriteLine($"[LOG] RefreshCurrentPassTrajectoriesListBox: Set ItemsSource to a list with {currentPass.Trajectories.Count} trajectories.");
                 // Assuming Trajectory.ToString() is overridden for display or DisplayMemberPath is set in XAML if needed
             }
             // else CurrentPassTrajectoriesListBox remains empty
@@ -1827,6 +1829,7 @@ namespace RobTeach.Views
                     switch (dxfEntity)
                     {
                         case DxfLwPolyline polyline:
+                            Debug.WriteLine("[LOG] OnCadEntityClicked: DxfLwPolyline selected.");
                             newTrajectory.PrimitiveType = "Polygon";
                             var vertices = polyline.Vertices.Select(v => new Point(v.X, v.Y)).ToList();
 
@@ -1839,10 +1842,18 @@ namespace RobTeach.Views
                             }
                             newTrajectory.Vertices = orderedVertices;
                             newTrajectory.Points = orderedVertices;
-                            Debug.WriteLine($"[DEBUG] OnCadEntityClicked: Created polygon trajectory with {newTrajectory.Vertices.Count} vertices.");
+                            Debug.WriteLine($"[LOG] OnCadEntityClicked: Populated trajectory with {newTrajectory.Vertices.Count} vertices. First vertex: ({newTrajectory.Vertices[0].X}, {newTrajectory.Vertices[0].Y})");
                             currentPass.Trajectories.Add(newTrajectory);
+                            Debug.WriteLine($"[LOG] OnCadEntityClicked: Added polygon trajectory to pass. Total trajectories in pass: {currentPass.Trajectories.Count}");
                             trajectoryToSelect = newTrajectory;
-                            break;
+                            // This was the fix from before, but it needs to be combined with the UI refresh calls before returning.
+                            RefreshCurrentPassTrajectoriesListBox();
+                            CurrentPassTrajectoriesListBox.SelectedItem = trajectoryToSelect;
+                            CurrentPassTrajectoriesListBox.Items.Refresh();
+                            RefreshCadCanvasHighlights();
+                            UpdateDirectionIndicator();
+                            UpdateOrderNumberLabels();
+                            return; // <-- THE CRITICAL FIX
                         case DxfLine line:
                             newTrajectory.PrimitiveType = "Line";
                             double p1DistSq = line.P1.X * line.P1.X + line.P1.Y * line.P1.Y + line.P1.Z * line.P1.Z;
@@ -1960,16 +1971,14 @@ namespace RobTeach.Views
                             newTrajectory.PrimitiveType = dxfEntity.GetType().Name;
                             break;
                     }
-                    if (dxfEntity.GetType() != typeof(DxfLwPolyline))
-                    {
-                        PopulateTrajectoryPoints(newTrajectory);
-                        newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory); // Set default runtime
-                        // This was the source of the bug for non-polygon types. It was moved inside the type-specific handlers.
-                        // currentPass.Trajectories.Add(newTrajectory);
-                        AppLogger.Log($"Trajectory added to pass '{currentPass.PassName}': Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'.", LogLevel.Info);
-                        isConfigurationDirty = true;
-                        // trajectoryToSelect = newTrajectory; // Also moved
-                    }
+                    // This block is now redundant as all handled types add themselves to the trajectory list.
+                    // if (dxfEntity.GetType() != typeof(DxfLwPolyline))
+                    // {
+                    //     PopulateTrajectoryPoints(newTrajectory);
+                    //     newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory); // Set default runtime
+                    //     AppLogger.Log($"Trajectory added to pass '{currentPass.PassName}': Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'.", LogLevel.Info);
+                    //     isConfigurationDirty = true;
+                    // }
                 }
 
                 RefreshCurrentPassTrajectoriesListBox();
