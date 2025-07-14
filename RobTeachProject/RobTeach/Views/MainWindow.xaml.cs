@@ -857,11 +857,10 @@ namespace RobTeach.Views
                     }
                     else if (selectedTrajectory.PrimitiveType == "Polygon")
                     {
-                        Debug.WriteLine("[DEBUG] TrajectoryIsReversedCheckBox_Changed: Reversing polygon vertices.");
-                        selectedTrajectory.Vertices.Reverse();
+                        Debug.WriteLine("[DEBUG] TrajectoryIsReversedCheckBox_Changed: Reversing polygon points.");
                         selectedTrajectory.Points.Reverse();
                         PolygonVerticesListBox.ItemsSource = null;
-                        PolygonVerticesListBox.ItemsSource = selectedTrajectory.Vertices;
+                        PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points;
                     }
 
 
