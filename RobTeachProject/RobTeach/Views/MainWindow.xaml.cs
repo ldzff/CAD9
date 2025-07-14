@@ -1839,6 +1839,8 @@ namespace RobTeach.Views
                             }
                             newTrajectory.Vertices = orderedVertices;
                             newTrajectory.Points = orderedVertices;
+                            currentPass.Trajectories.Add(newTrajectory);
+                            trajectoryToSelect = newTrajectory;
                             break;
                         case DxfLine line:
                             newTrajectory.PrimitiveType = "Line";
@@ -1951,15 +1953,19 @@ namespace RobTeach.Views
                             newTrajectory.PrimitiveType = dxfEntity.GetType().Name;
                             break;
                     }
-                    PopulateTrajectoryPoints(newTrajectory);
-                    newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory); // Set default runtime
-                    currentPass.Trajectories.Add(newTrajectory);
-                    AppLogger.Log($"Trajectory added to pass '{currentPass.PassName}': Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'.", LogLevel.Info);
-                    isConfigurationDirty = true;
-                    trajectoryToSelect = newTrajectory; // Mark this new trajectory for selection
+                    if (dxfEntity.GetType() != typeof(DxfLwPolyline))
+                    {
+                        PopulateTrajectoryPoints(newTrajectory);
+                        newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory); // Set default runtime
+                        currentPass.Trajectories.Add(newTrajectory);
+                        AppLogger.Log($"Trajectory added to pass '{currentPass.PassName}': Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'.", LogLevel.Info);
+                        isConfigurationDirty = true;
+                        trajectoryToSelect = newTrajectory; // Mark this new trajectory for selection
+                    }
                 }
 
                 RefreshCurrentPassTrajectoriesListBox();
+                CurrentPassTrajectoriesListBox.Items.Refresh();
 
                 if (trajectoryToSelect != null)
                 {
