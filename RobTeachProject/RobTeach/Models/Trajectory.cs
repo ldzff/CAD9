@@ -36,7 +36,7 @@ namespace RobTeach.Models
         /// as geometric parameters below should be used for reconstruction.
         /// </summary>
         [JsonIgnore]
-        public List<DxfPoint> Points { get; set; } = new List<DxfPoint>();
+        public List<System.Windows.Point> Points { get; set; } = new List<System.Windows.Point>();
 
         /// <summary>
         /// Gets or sets the type of the primitive (e.g., "Line", "Arc", "Circle").
