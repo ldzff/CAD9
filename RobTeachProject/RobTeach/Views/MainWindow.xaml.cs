@@ -375,6 +375,10 @@ namespace RobTeach.Views
                 double offsetY = -15; // Offset above the anchor point (FontSize is 10, Padding makes it taller)
 
                 // Debug.WriteLine($"[JULES_DEBUG] UpdateOrderNumberLabels: Creating label for Trajectory - Type: {selectedTrajectory.PrimitiveType}, Index: {i}, Anchor: {anchorPoint}");
+                // Apply a scale transform to flip the label vertically
+                orderLabel.RenderTransform = new ScaleTransform(1, -1);
+                orderLabel.RenderTransformOrigin = new Point(0.5, 0.5);
+
                 Canvas.SetLeft(orderLabel, anchorPoint.X + offsetX);
                 Canvas.SetTop(orderLabel, anchorPoint.Y + offsetY);
                 Panel.SetZIndex(orderLabel, 100); // Ensure labels are on top
