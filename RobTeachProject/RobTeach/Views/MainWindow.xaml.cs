@@ -385,12 +385,13 @@ namespace RobTeach.Views
                 double offsetY = -15; // Offset above the anchor point (FontSize is 10, Padding makes it taller)
 
                 // Debug.WriteLine($"[JULES_DEBUG] UpdateOrderNumberLabels: Creating label for Trajectory - Type: {selectedTrajectory.PrimitiveType}, Index: {i}, Anchor: {anchorPoint}");
-                // Apply a scale transform to flip the label vertically
-                orderLabel.RenderTransform = new ScaleTransform(1, -1);
+                // Apply a scale transform to flip the label vertically and keep it screen-sized
+                double scale = 1.0 / _scaleTransform.ScaleX;
+                orderLabel.RenderTransform = new ScaleTransform(scale, -scale);
                 orderLabel.RenderTransformOrigin = new Point(0.5, 0.5);
 
-                Canvas.SetLeft(orderLabel, anchorPoint.X + offsetX);
-                Canvas.SetTop(orderLabel, anchorPoint.Y + offsetY);
+                Canvas.SetLeft(orderLabel, anchorPoint.X + (offsetX * scale));
+                Canvas.SetTop(orderLabel, anchorPoint.Y + (offsetY * scale));
                 Panel.SetZIndex(orderLabel, 100); // Ensure labels are on top
 
                 CadCanvas.Children.Add(orderLabel);
@@ -488,6 +489,7 @@ namespace RobTeach.Views
                 return;
             }
 
+            double scale = 1.0 / _scaleTransform.ScaleX;
             const double fixedArrowLineLength = 8.0; // Fixed visual length for the arrow's line segment
             Trajectory? actuallySelectedItem = CurrentPassTrajectoriesListBox.SelectedItem as Trajectory; // Get selected item once
 
@@ -501,8 +503,8 @@ namespace RobTeach.Views
                 var newIndicator = new DirectionIndicator
                 {
                     Color = (trajectoryInLoop == actuallySelectedItem) ? SelectedStrokeBrush : DefaultStrokeBrush,
-                    ArrowheadSize = 8,
-                    StrokeThickness = 1.5
+                    ArrowheadSize = 8 * scale,
+                    StrokeThickness = 1.5 * scale
                 };
 
                 List<System.Windows.Point> points = trajectoryInLoop.Points;
@@ -523,8 +525,8 @@ namespace RobTeach.Views
                             if (direction.Length > 0)
                             {
                                 direction.Normalize();
-                                arrowStartPoint = midPoint - direction * (fixedArrowLineLength / 2.0);
-                                arrowEndPoint = midPoint + direction * (fixedArrowLineLength / 2.0);
+                                arrowStartPoint = midPoint - direction * (fixedArrowLineLength * scale / 2.0);
+                                arrowEndPoint = midPoint + direction * (fixedArrowLineLength * scale / 2.0);
                                 addIndicator = true;
                             }
                         }
@@ -540,8 +542,8 @@ namespace RobTeach.Views
                             {
                                 direction.Normalize();
                                 // Center the short arrow around p0
-                                arrowStartPoint = p0 - direction * (fixedArrowLineLength / 2.0);
-                                arrowEndPoint = p0 + direction * (fixedArrowLineLength / 2.0);
+                                arrowStartPoint = p0 - direction * (fixedArrowLineLength * scale / 2.0);
+                                arrowEndPoint = p0 + direction * (fixedArrowLineLength * scale / 2.0);
                                 addIndicator = true;
                             }
                         }
@@ -557,8 +559,8 @@ namespace RobTeach.Views
                             {
                                 direction.Normalize();
                                 // Center the short arrow around p0
-                                arrowStartPoint = p0 - direction * (fixedArrowLineLength / 2.0);
-                                arrowEndPoint = p0 + direction * (fixedArrowLineLength / 2.0);
+                                arrowStartPoint = p0 - direction * (fixedArrowLineLength * scale / 2.0);
+                                arrowEndPoint = p0 + direction * (fixedArrowLineLength * scale / 2.0);
                                 addIndicator = true;
                             }
                         }
