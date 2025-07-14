@@ -728,10 +728,23 @@ namespace RobTeach.Views
                 CircleCenterZTextBox.Tag = selectedTrajectory; // Still use CircleCenterZTextBox for the tag
 
                 // Polygon vertices
-                if (selectedTrajectory.PrimitiveType == "Polygon")
+                if (selectedTrajectory.PrimitiveType == "Polygon" && selectedTrajectory.OriginalDxfEntity is DxfLwPolyline polyline)
                 {
+                    var vertices = polyline.Vertices.Select(v => new Point(v.X, v.Y)).ToList();
+                    int startIndex = FindBottomLeftVertexIndex(vertices);
+                    var orderedVertices = new List<Point>();
+                    for (int i = 0; i < vertices.Count; i++)
+                    {
+                        orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
+                    }
+
+                    if (selectedTrajectory.IsReversed)
+                    {
+                        orderedVertices.Reverse();
+                    }
+
                     PolygonVerticesGroupBox.Visibility = Visibility.Visible;
-                    PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points;
+                    PolygonVerticesListBox.ItemsSource = orderedVertices;
                     PolygonVerticesListBox.Items.Refresh();
                 }
                 else
@@ -857,10 +870,9 @@ namespace RobTeach.Views
                     }
                     else if (selectedTrajectory.PrimitiveType == "Polygon")
                     {
-                        Debug.WriteLine("[DEBUG] TrajectoryIsReversedCheckBox_Changed: Reversing polygon points.");
-                        selectedTrajectory.Points.Reverse();
-                        PolygonVerticesListBox.ItemsSource = null;
-                        PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points;
+                        // The logic is now handled in UpdateSelectedTrajectoryDetailUI,
+                        // so we just need to trigger an update.
+                        UpdateSelectedTrajectoryDetailUI();
                     }
 
 
@@ -4027,7 +4039,7 @@ namespace RobTeach.Views
             }
             newTrajectory.Points = orderedVertices;
 
-            PopulateTrajectoryPoints(newTrajectory);
+            // No need to call PopulateTrajectoryPoints for polygons as it's handled differently
             newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory);
 
             return newTrajectory;
