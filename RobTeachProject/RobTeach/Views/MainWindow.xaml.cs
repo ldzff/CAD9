@@ -1803,6 +1803,49 @@ namespace RobTeach.Views
 
                     switch (dxfEntity)
                     {
+                        case DxfLwPolyline polyline:
+                            // Decompose polyline into individual segments
+                            for (int i = 0; i < polyline.Vertices.Count; i++)
+                            {
+                                var startVertex = polyline.Vertices[i];
+                                var endVertex = polyline.IsClosed ? polyline.Vertices[(i + 1) % polyline.Vertices.Count] : (i + 1 < polyline.Vertices.Count ? polyline.Vertices[i + 1] : null);
+
+                                if (endVertex == null) continue;
+
+                                var segmentTrajectory = new Trajectory();
+                                if (Math.Abs(startVertex.Bulge) < 1e-6) // It's a line
+                                {
+                                    segmentTrajectory.PrimitiveType = "Line";
+                                    segmentTrajectory.LineStartPoint = new DxfPoint(startVertex.X, startVertex.Y, 0);
+                                    segmentTrajectory.LineEndPoint = new DxfPoint(endVertex.X, endVertex.Y, 0);
+                                }
+                                else // It's an arc
+                                {
+                                    var arcPoints = GeometryUtils.ConvertBulgeToArcPoints(new DxfPoint(startVertex.X, startVertex.Y, 0), new DxfPoint(endVertex.X, endVertex.Y, 0), startVertex.Bulge);
+                                    if (arcPoints.HasValue)
+                                    {
+                                        segmentTrajectory.PrimitiveType = "Arc";
+                                        segmentTrajectory.ArcPoint1 = new TrajectoryPointWithAngles(arcPoints.Value.p1);
+                                        segmentTrajectory.ArcPoint2 = new TrajectoryPointWithAngles(arcPoints.Value.p2);
+                                        segmentTrajectory.ArcPoint3 = new TrajectoryPointWithAngles(arcPoints.Value.p3);
+                                    }
+                                    else
+                                    {
+                                        // Fallback to line if arc conversion fails
+                                        segmentTrajectory.PrimitiveType = "Line";
+                                        segmentTrajectory.LineStartPoint = new DxfPoint(startVertex.X, startVertex.Y, 0);
+                                        segmentTrajectory.LineEndPoint = new DxfPoint(endVertex.X, endVertex.Y, 0);
+                                    }
+                                }
+                                currentPass.Trajectories.Add(segmentTrajectory);
+                            }
+                            trajectoryToSelect = currentPass.Trajectories.LastOrDefault();
+                            // Prevent the original polyline from being added as a single trajectory
+                            RefreshCurrentPassTrajectoriesListBox();
+                            RefreshCadCanvasHighlights();
+                            UpdateDirectionIndicator();
+                            UpdateOrderNumberLabels();
+                            return;
                         case DxfLine line:
                             newTrajectory.PrimitiveType = "Line";
                             double p1DistSq = line.P1.X * line.P1.X + line.P1.Y * line.P1.Y + line.P1.Z * line.P1.Z;

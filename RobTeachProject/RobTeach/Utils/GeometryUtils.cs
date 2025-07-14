@@ -187,5 +187,53 @@ namespace RobTeach.Utils
             Debug.WriteLine($"[JULES_DEBUG] GeometryUtils.CalculateCircleCenterRadiusFromThreePoints: P1={p1}, P2={p2}, P3={p3} -> Center={center}, Radius={radius}, Normal={normal}");
             return (center, radius, normal);
         }
+
+        public static (DxfPoint p1, DxfPoint p2, DxfPoint p3)? ConvertBulgeToArcPoints(DxfPoint start, DxfPoint end, double bulge)
+        {
+            if (Math.Abs(bulge) < 1e-6) return null;
+
+            double dx = end.X - start.X;
+            double dy = end.Y - start.Y;
+            double chord = Math.Sqrt(dx * dx + dy * dy);
+
+            double sagitta = bulge * chord / 2;
+            double radius = (sagitta * sagitta + chord * chord / 4) / (2 * sagitta);
+            double angle = 4 * Math.Atan(bulge);
+
+            double midX = start.X + dx / 2;
+            double midY = start.Y + dy / 2;
+
+            double perpDx = -dy;
+            double perpDy = dx;
+            double perpLen = Math.Sqrt(perpDx * perpDx + perpDy * perpDy);
+            perpDx /= perpLen;
+            perpDy /= perpLen;
+
+            double centerX = midX - (radius - sagitta) * perpDx;
+            double centerY = midY - (radius - sagitta) * perpDy;
+
+            double startAngle = Math.Atan2(start.Y - centerY, start.X - centerX);
+            double endAngle = Math.Atan2(end.Y - centerY, end.X - centerX);
+
+            if (bulge < 0)
+            {
+                var temp = startAngle;
+                startAngle = endAngle;
+                endAngle = temp;
+            }
+
+            if (endAngle < startAngle)
+            {
+                endAngle += 2 * Math.PI;
+            }
+
+            double midAngle = (startAngle + endAngle) / 2;
+
+            DxfPoint p1 = start;
+            DxfPoint p2 = new DxfPoint(centerX + radius * Math.Cos(midAngle), centerY + radius * Math.Sin(midAngle), start.Z);
+            DxfPoint p3 = end;
+
+            return (p1, p2, p3);
+        }
     }
 }
