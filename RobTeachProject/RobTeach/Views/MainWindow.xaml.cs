@@ -1529,6 +1529,11 @@ namespace RobTeach.Views
 
         private void LoadDxfButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!PromptAndTrySaveChanges())
+            {
+                return; // User cancelled or save failed
+            }
+
             try
             {
                 var openFileDialog = new OpenFileDialog
@@ -1539,6 +1544,18 @@ namespace RobTeach.Views
 
                 if (openFileDialog.ShowDialog() == true)
                 {
+                    // Reset all selections and configurations
+                    _selectedDxfEntities.Clear();
+                    _wpfShapeToDxfEntityMap.Clear();
+                    _dxfEntityHandleMap.Clear();
+                    _trajectoryPreviewPolylines.Clear();
+                    _currentConfiguration = new Models.Configuration();
+                    ProductNameTextBox.Text = $"Product_{DateTime.Now:yyyyMMddHHmmss}";
+                    SprayPassesListBox.ItemsSource = null;
+                    CurrentPassTrajectoriesListBox.ItemsSource = null;
+                    CadCanvas.Children.Clear();
+
+
                     _currentDxfFilePath = openFileDialog.FileName;
                     _currentDxfDocument = DxfFile.Load(_currentDxfFilePath);
 
