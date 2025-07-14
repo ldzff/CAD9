@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows; // This using statement makes System.Windows.Point available as 'Point'
 using IxMilia.Dxf; // Added for DxfPoint, DxfVector
 using IxMilia.Dxf.Entities; // For DxfEntity
@@ -152,7 +153,7 @@ namespace RobTeach.Models
                     details = $"Circle (P1:{CirclePoint1.Coordinates}, P2:{CirclePoint2.Coordinates}, P3:{CirclePoint3.Coordinates})";
                     break;
                 case "Polygon":
-                    details = $"Polygon ({Points.Count} vertices)";
+                    details = $"Polygon {{{string.Join(",", Vertices.Select(v => $"({v.X:F2},{v.Y:F2})"))}}}";
                     break;
                 default:
                     // Use EntityType if PrimitiveType is not set or recognized, then fallback to DXF entity type
