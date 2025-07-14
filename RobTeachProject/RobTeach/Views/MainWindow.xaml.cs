@@ -1811,6 +1811,7 @@ namespace RobTeach.Views
             Trajectory trajectoryToSelect = null; // Declare at wider scope
 
             // Detailed check for the main condition
+            Trajectory trajectoryToSelect = null;
             if (sender is System.Windows.Shapes.Shape clickedShape && _wpfShapeToDxfEntityMap.TryGetValue(clickedShape, out DxfEntity? dxfEntity))
             {
                 // keyExists is implicitly true if TryGetValue succeeds.
@@ -3026,6 +3027,7 @@ namespace RobTeach.Views
                 // Removed outer declaration and population of newPassTrajectories.
                 // This logic is now handled within the 'else' block for Replace Mode.
 
+                Trajectory trajectoryToSelect = null;
                 bool isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
                 Debug.WriteLine($"[DEBUG] CadCanvas_MouseUp: ShiftPressed={isShiftPressed}, Marquee Hits={marqueeHitEntities.Count}");
 
@@ -3079,8 +3081,8 @@ namespace RobTeach.Views
                                 currentPass.Trajectories.Add(polygonTrajectory);
                                 itemsAddedCount++;
                                 addedTrajectoryInfo.Add($"Type 'Polygon', EntityHandle '{polygonTrajectory.OriginalEntityHandle}'");
-                                trajectoryToSelect = polygonTrajectory; // Set the last created trajectory as the one to be selected
-                                continue; // Skip the generic trajectory creation below
+                            trajectoryToSelect = polygonTrajectory;
+                            continue;
                             }
                             else
                             {
