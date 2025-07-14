@@ -739,7 +739,7 @@ namespace RobTeach.Views
                 if (selectedTrajectory.PrimitiveType == "Polygon")
                 {
                     PolygonVerticesGroupBox.Visibility = Visibility.Visible;
-                    PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points;
+                    PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points.Select(p => new System.Windows.Point(p.X, p.Y)).ToList();
                     PolygonVerticesListBox.Items.Refresh();
                 }
                 else
@@ -868,7 +868,9 @@ namespace RobTeach.Views
                     else if (selectedTrajectory.PrimitiveType == "Polygon")
                     {
                         selectedTrajectory.Points.Reverse();
-                        UpdateSelectedTrajectoryDetailUI();
+                        // Update the listbox directly since UpdateSelectedTrajectoryDetailUI would re-order it
+                        PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points.Select(p => new System.Windows.Point(p.X, p.Y)).ToList();
+                        PolygonVerticesListBox.Items.Refresh();
                     }
 
 
@@ -1446,7 +1448,7 @@ namespace RobTeach.Views
                     AppLogger.Log($"Trajectory '{selectedTrajectory.ToString()}' Polygon points Z set to {newZ:F3} in pass '{_currentConfiguration.SprayPasses[_currentConfiguration.CurrentPassIndex].PassName}'.");
                     isConfigurationDirty = true;
                     CurrentPassTrajectoriesListBox.Items.Refresh();
-                    PolygonVerticesListBox.ItemsSource = newPoints;
+                    PolygonVerticesListBox.ItemsSource = newPoints.Select(p => new System.Windows.Point(p.X, p.Y)).ToList();
                     PolygonVerticesListBox.Items.Refresh();
                 }
             }
@@ -4069,7 +4071,7 @@ namespace RobTeach.Views
             };
 
             var vertices = polyline.Vertices.Select(v => new DxfPoint(v.X, v.Y, 0)).ToList();
-            int startIndex = FindBottomLeftVertexIndex(vertices.Select(v => new System.Windows.Point(v.X, v.Y)).ToList());
+                            int startIndex = FindBottomLeftVertexIndex(vertices);
             var orderedVertices = new List<DxfPoint>();
             for (int i = 0; i < vertices.Count; i++)
             {
@@ -4083,7 +4085,7 @@ namespace RobTeach.Views
             return newTrajectory;
         }
 
-        private int FindBottomLeftVertexIndex(List<System.Windows.Point> vertices)
+        private int FindBottomLeftVertexIndex(List<DxfPoint> vertices)
         {
             if (vertices == null || vertices.Count == 0) return -1;
 
