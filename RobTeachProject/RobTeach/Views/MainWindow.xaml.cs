@@ -697,6 +697,7 @@ namespace RobTeach.Views
                 LineHeightControlsPanel.Visibility = selectedTrajectory.PrimitiveType == "Line" ? Visibility.Visible : Visibility.Collapsed;
                 ArcHeightControlsPanel.Visibility = selectedTrajectory.PrimitiveType == "Arc" ? Visibility.Visible : Visibility.Collapsed;
                 CircleHeightControlsPanel.Visibility = selectedTrajectory.PrimitiveType == "Circle" ? Visibility.Visible : Visibility.Collapsed;
+                PolygonHeightControlsPanel.Visibility = selectedTrajectory.PrimitiveType == "Polygon" ? Visibility.Visible : Visibility.Collapsed;
 
                 if (selectedTrajectory.PrimitiveType == "Line")
                 {
@@ -722,31 +723,23 @@ namespace RobTeach.Views
                     // Display Z of CirclePoint1. Assume P1, P2, P3 are co-planar for Z adjustment via this UI.
                     CircleCenterZTextBox.Text = selectedTrajectory.CirclePoint1.Coordinates.Z.ToString("F3");
                 }
+                else if (selectedTrajectory.PrimitiveType == "Polygon" && selectedTrajectory.Points.Count > 0)
+                {
+                    PolygonZTextBox.Text = selectedTrajectory.Points[0].Z.ToString("F3");
+                }
 
                 // Set Tags for Z-coordinate TextBoxes
                 LineStartZTextBox.Tag = selectedTrajectory;
                 LineEndZTextBox.Tag = selectedTrajectory;
                 ArcCenterZTextBox.Tag = selectedTrajectory;
                 CircleCenterZTextBox.Tag = selectedTrajectory; // Still use CircleCenterZTextBox for the tag
+                PolygonZTextBox.Tag = selectedTrajectory;
 
                 // Polygon vertices
-                if (selectedTrajectory.PrimitiveType == "Polygon" && selectedTrajectory.OriginalDxfEntity is DxfLwPolyline polyline)
+                if (selectedTrajectory.PrimitiveType == "Polygon")
                 {
-                    var vertices = polyline.Vertices.Select(v => new Point(v.X, v.Y)).ToList();
-                    int startIndex = FindBottomLeftVertexIndex(vertices);
-                    var orderedVertices = new List<Point>();
-                    for (int i = 0; i < vertices.Count; i++)
-                    {
-                        orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
-                    }
-
-                    if (selectedTrajectory.IsReversed)
-                    {
-                        orderedVertices.Reverse();
-                    }
-
                     PolygonVerticesGroupBox.Visibility = Visibility.Visible;
-                    PolygonVerticesListBox.ItemsSource = orderedVertices;
+                    PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points;
                     PolygonVerticesListBox.Items.Refresh();
                 }
                 else
@@ -785,6 +778,7 @@ namespace RobTeach.Views
                 LineHeightControlsPanel.Visibility = Visibility.Collapsed;
                 ArcHeightControlsPanel.Visibility = Visibility.Collapsed;
                 CircleHeightControlsPanel.Visibility = Visibility.Collapsed;
+                PolygonHeightControlsPanel.Visibility = Visibility.Collapsed;
                 LineStartZTextBox.Text = string.Empty;
                 LineEndZTextBox.Text = string.Empty;
                 ArcCenterZTextBox.Text = string.Empty;
@@ -795,6 +789,7 @@ namespace RobTeach.Views
                 LineEndZTextBox.Tag = null;
                 ArcCenterZTextBox.Tag = null;
                 CircleCenterZTextBox.Tag = null;
+                PolygonZTextBox.Tag = null;
 
                 // Runtime TextBox
                 TrajectoryRuntimeTextBox.IsEnabled = false;
@@ -872,8 +867,7 @@ namespace RobTeach.Views
                     }
                     else if (selectedTrajectory.PrimitiveType == "Polygon")
                     {
-                        // The logic is now handled in UpdateSelectedTrajectoryDetailUI,
-                        // so we just need to trigger an update.
+                        selectedTrajectory.Points.Reverse();
                         UpdateSelectedTrajectoryDetailUI();
                     }
 
@@ -1428,6 +1422,46 @@ namespace RobTeach.Views
     }
 
     // Removed CircleCenterZTextBox_LostFocus
+
+    private void PolygonZTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (PolygonZTextBox.Tag is Trajectory selectedTrajectory && selectedTrajectory.PrimitiveType == "Polygon")
+        {
+            if (double.TryParse(PolygonZTextBox.Text, out double newZ))
+            {
+                bool changed = false;
+                var newPoints = new List<DxfPoint>();
+                foreach (var point in selectedTrajectory.Points)
+                {
+                    if (point.Z != newZ)
+                    {
+                        changed = true;
+                    }
+                    newPoints.Add(new DxfPoint(point.X, point.Y, newZ));
+                }
+
+                if (changed)
+                {
+                    selectedTrajectory.Points = newPoints;
+                    AppLogger.Log($"Trajectory '{selectedTrajectory.ToString()}' Polygon points Z set to {newZ:F3} in pass '{_currentConfiguration.SprayPasses[_currentConfiguration.CurrentPassIndex].PassName}'.");
+                    isConfigurationDirty = true;
+                    CurrentPassTrajectoriesListBox.Items.Refresh();
+                    PolygonVerticesListBox.ItemsSource = newPoints;
+                    PolygonVerticesListBox.Items.Refresh();
+                }
+            }
+            else
+            {
+                string msg = "Invalid Polygon Z value. Please enter a valid number.";
+                AppLogger.Log(msg, LogLevel.Error);
+                MessageBox.Show(msg, "Input Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (selectedTrajectory.Points.Count > 0)
+                {
+                    PolygonZTextBox.Text = selectedTrajectory.Points[0].Z.ToString("F3");
+                }
+            }
+        }
+    }
 
         /// <summary>
         /// Handles the Closing event of the window. Ensures Modbus connection is disconnected.
@@ -4032,9 +4066,9 @@ namespace RobTeach.Views
                 PrimitiveType = "Polygon"
             };
 
-            var vertices = polyline.Vertices.Select(v => new Point(v.X, v.Y)).ToList();
-            int startIndex = FindBottomLeftVertexIndex(vertices);
-            var orderedVertices = new List<Point>();
+            var vertices = polyline.Vertices.Select(v => new DxfPoint(v.X, v.Y, 0)).ToList();
+            int startIndex = FindBottomLeftVertexIndex(vertices.Select(v => new System.Windows.Point(v.X, v.Y)).ToList());
+            var orderedVertices = new List<DxfPoint>();
             for (int i = 0; i < vertices.Count; i++)
             {
                 orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
@@ -4047,7 +4081,7 @@ namespace RobTeach.Views
             return newTrajectory;
         }
 
-        private int FindBottomLeftVertexIndex(List<Point> vertices)
+        private int FindBottomLeftVertexIndex(List<System.Windows.Point> vertices)
         {
             if (vertices == null || vertices.Count == 0) return -1;
 
