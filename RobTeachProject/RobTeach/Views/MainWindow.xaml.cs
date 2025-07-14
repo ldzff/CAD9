@@ -728,8 +728,10 @@ namespace RobTeach.Views
                 // Polygon vertices
                 if (selectedTrajectory.PrimitiveType == "Polygon")
                 {
+                    Debug.WriteLine($"[DEBUG] UpdateSelectedTrajectoryDetailUI: Polygon selected. Vertices count: {selectedTrajectory.Vertices.Count}");
                     PolygonVerticesGroupBox.Visibility = Visibility.Visible;
                     PolygonVerticesListBox.ItemsSource = selectedTrajectory.Vertices;
+                    PolygonVerticesListBox.Items.Refresh();
                 }
                 else
                 {
@@ -854,8 +856,11 @@ namespace RobTeach.Views
                     }
                     else if (selectedTrajectory.PrimitiveType == "Polygon")
                     {
+                        Debug.WriteLine("[DEBUG] TrajectoryIsReversedCheckBox_Changed: Reversing polygon vertices.");
                         selectedTrajectory.Vertices.Reverse();
                         selectedTrajectory.Points.Reverse();
+                        PolygonVerticesListBox.ItemsSource = null;
+                        PolygonVerticesListBox.ItemsSource = selectedTrajectory.Vertices;
                     }
 
 
