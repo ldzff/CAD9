@@ -63,10 +63,6 @@ namespace RobTeach.Models
         public double OriginalCircleRadius { get; set; } = 0.0;
         public DxfVector OriginalCircleNormal { get; set; } = DxfVector.ZAxis;
 
-        // Vertices for polygon
-        public List<Point> Vertices { get; set; } = new List<Point>();
-
-
         /// <summary>
         /// Gets or sets a value indicating whether the trajectory's conventional direction should be reversed.
         /// For example, for an arc, this might mean traversing from EndAngle to StartAngle.
@@ -153,14 +149,13 @@ namespace RobTeach.Models
                     details = $"Circle (P1:{CirclePoint1.Coordinates}, P2:{CirclePoint2.Coordinates}, P3:{CirclePoint3.Coordinates})";
                     break;
                 case "Polygon":
-                    System.Diagnostics.Debug.WriteLine($"[LOG] Trajectory.ToString(): Formatting polygon with {Vertices.Count} vertices.");
-                    if (Vertices.Count > 0)
+                    if (Points.Count > 0)
                     {
-                        details = $"Polygon {{{string.Join(",", Vertices.Select(v => $"({v.X:F2},{v.Y:F2})"))}}}";
+                        details = $"Polygon {{{string.Join(",", Points.Select(p => $"({p.X:F2},{p.Y:F2})"))}}}";
                     }
                     else
                     {
-                        details = "Polygon (Vertices not populated)";
+                        details = "Polygon (Points not populated)";
                     }
                     break;
                 default:

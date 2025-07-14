@@ -730,9 +730,8 @@ namespace RobTeach.Views
                 // Polygon vertices
                 if (selectedTrajectory.PrimitiveType == "Polygon")
                 {
-                    Debug.WriteLine($"[DEBUG] UpdateSelectedTrajectoryDetailUI: Polygon selected. Vertices count: {selectedTrajectory.Vertices.Count}");
                     PolygonVerticesGroupBox.Visibility = Visibility.Visible;
-                    PolygonVerticesListBox.ItemsSource = selectedTrajectory.Vertices;
+                    PolygonVerticesListBox.ItemsSource = selectedTrajectory.Points;
                     PolygonVerticesListBox.Items.Refresh();
                 }
                 else
@@ -4027,7 +4026,6 @@ namespace RobTeach.Views
             {
                 orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
             }
-            newTrajectory.Vertices = orderedVertices;
             newTrajectory.Points = orderedVertices;
 
             PopulateTrajectoryPoints(newTrajectory);
