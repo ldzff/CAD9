@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="EasyModbusTCP.NETCore" Version="1.0.0" />
+    <PackageReference Include="HelixToolkit.Wpf" Version="2.24.0" />
     <PackageReference Include="IxMilia.Dxf" Version="0.8.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
@@ -35,6 +36,9 @@
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>Views\MainWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Robot3DView.xaml.cs">
+      <DependentUpon>Views\Robot3DView.xaml</DependentUpon>
+    </Compile>
     <!-- Include files in Models, ViewModels, Utils if any are added later -->
     <Compile Include="Models\**\*.cs" />
     <Compile Include="ViewModels\**\*.cs" />
@@ -47,6 +51,10 @@
 
   <ItemGroup>
     <Page Include="Views\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Robot3DView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -3923,6 +3923,12 @@ namespace RobTeach.Views
             PerformFitToView();
         }
 
+        private void Show3DViewButton_Click(object sender, RoutedEventArgs e)
+        {
+            var robot3DView = new Robot3DView();
+            robot3DView.Show();
+        }
+
         private Rect GetDxfInsertBounds(DxfInsert insert)
         {
             AppLogger.Log($"GetDxfInsertBounds: Processing Insert Name='{insert.Name}'.", LogLevel.Debug);
