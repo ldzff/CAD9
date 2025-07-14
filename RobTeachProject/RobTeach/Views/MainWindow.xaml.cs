@@ -85,6 +85,7 @@ namespace RobTeach.Views
         // Styling constants for visual feedback
         private static readonly Brush DefaultStrokeBrush = Brushes.LightGray; // Default color for CAD shapes.
         private static readonly Brush SelectedStrokeBrush = Brushes.DodgerBlue;   // Color for selected CAD shapes.
+        private static readonly Brush CurrentSelectionStrokeBrush = Brushes.Green; // Color for the currently selected trajectory
         private const double DefaultStrokeThickness = 2;                          // Default stroke thickness.
         private const double SelectedStrokeThickness = 3.5;                       // Thickness for selected shapes and trajectories.
         private const string TrajectoryPreviewTag = "TrajectoryPreview";          // Tag for identifying trajectory polylines on canvas (not actively used for removal yet).
@@ -228,6 +229,8 @@ namespace RobTeach.Views
                 }
             }
 
+            var currentSelectedTrajectory = CurrentPassTrajectoriesListBox.SelectedItem as Trajectory;
+
             // Update all shapes on canvas
             foreach (var wpfShape in _wpfShapeToDxfEntityMap.Keys)
             {
@@ -235,7 +238,14 @@ namespace RobTeach.Views
                 {
                     if (entitiesInCurrentPass.Contains(associatedEntity))
                     {
-                        wpfShape.Stroke = SelectedStrokeBrush;
+                        if (currentSelectedTrajectory != null && currentSelectedTrajectory.OriginalDxfEntity == associatedEntity)
+                        {
+                            wpfShape.Stroke = CurrentSelectionStrokeBrush;
+                        }
+                        else
+                        {
+                            wpfShape.Stroke = SelectedStrokeBrush;
+                        }
                         wpfShape.StrokeThickness = SelectedStrokeThickness;
                     }
                     else
@@ -446,7 +456,7 @@ namespace RobTeach.Views
             Trace.Flush();
             UpdateSelectedTrajectoryDetailUI(); // Renamed
             UpdateDirectionIndicator(); // Add call to update direction indicator
-    RefreshCadCanvasHighlights(); // <-- ADD THIS LINE
+            RefreshCadCanvasHighlights(); // <-- THIS LINE IS ALREADY HERE
         }
 
         private void UpdateDirectionIndicator()
@@ -1551,7 +1561,10 @@ namespace RobTeach.Views
                     _trajectoryPreviewPolylines.Clear();
                     _currentConfiguration = new Models.Configuration();
                     ProductNameTextBox.Text = $"Product_{DateTime.Now:yyyyMMddHHmmss}";
-                    SprayPassesListBox.ItemsSource = null;
+                    _currentConfiguration.SprayPasses.Add(new SprayPass { PassName = "Pass 1" });
+                    _currentConfiguration.CurrentPassIndex = 0;
+                    SprayPassesListBox.ItemsSource = _currentConfiguration.SprayPasses;
+                    SprayPassesListBox.SelectedIndex = 0;
                     CurrentPassTrajectoriesListBox.ItemsSource = null;
                     CadCanvas.Children.Clear();
 
