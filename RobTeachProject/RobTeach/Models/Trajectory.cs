@@ -62,6 +62,9 @@ namespace RobTeach.Models
         public double OriginalCircleRadius { get; set; } = 0.0;
         public DxfVector OriginalCircleNormal { get; set; } = DxfVector.ZAxis;
 
+        // Vertices for polygon
+        public List<Point> Vertices { get; set; } = new List<Point>();
+
 
         /// <summary>
         /// Gets or sets a value indicating whether the trajectory's conventional direction should be reversed.

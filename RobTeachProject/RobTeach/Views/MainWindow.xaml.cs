@@ -725,6 +725,18 @@ namespace RobTeach.Views
                 ArcCenterZTextBox.Tag = selectedTrajectory;
                 CircleCenterZTextBox.Tag = selectedTrajectory; // Still use CircleCenterZTextBox for the tag
 
+                // Polygon vertices
+                if (selectedTrajectory.PrimitiveType == "Polygon")
+                {
+                    PolygonVerticesGroupBox.Visibility = Visibility.Visible;
+                    PolygonVerticesListBox.ItemsSource = selectedTrajectory.Vertices;
+                }
+                else
+                {
+                    PolygonVerticesGroupBox.Visibility = Visibility.Collapsed;
+                    PolygonVerticesListBox.ItemsSource = null;
+                }
+
                 // Runtime TextBox
                 TrajectoryRuntimeTextBox.IsEnabled = true;
                 TrajectoryRuntimeTextBox.Text = selectedTrajectory.Runtime.ToString("F3"); // Format to 3 decimal places
@@ -842,6 +854,7 @@ namespace RobTeach.Views
                     }
                     else if (selectedTrajectory.PrimitiveType == "Polygon")
                     {
+                        selectedTrajectory.Vertices.Reverse();
                         selectedTrajectory.Points.Reverse();
                     }
 
@@ -1819,6 +1832,7 @@ namespace RobTeach.Views
                             {
                                 orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
                             }
+                            newTrajectory.Vertices = orderedVertices;
                             newTrajectory.Points = orderedVertices;
                             break;
                         case DxfLine line:
