@@ -1839,6 +1839,7 @@ namespace RobTeach.Views
                             }
                             newTrajectory.Vertices = orderedVertices;
                             newTrajectory.Points = orderedVertices;
+                            Debug.WriteLine($"[DEBUG] OnCadEntityClicked: Created polygon trajectory with {newTrajectory.Vertices.Count} vertices.");
                             currentPass.Trajectories.Add(newTrajectory);
                             trajectoryToSelect = newTrajectory;
                             break;
@@ -1856,11 +1857,15 @@ namespace RobTeach.Views
                                 newTrajectory.LineStartPoint = line.P2;
                                 newTrajectory.LineEndPoint = line.P1;
                             }
+                            currentPass.Trajectories.Add(newTrajectory);
+                            trajectoryToSelect = newTrajectory;
                             break;
                         case DxfArc arc:
                             newTrajectory.PrimitiveType = "Arc";
                             // Calculate P1, P2 (mid), P3 for the arc using DxfArc properties
                             double startRad = arc.StartAngle * Math.PI / 180.0;
+                            currentPass.Trajectories.Add(newTrajectory);
+                            trajectoryToSelect = newTrajectory;
                             double endRad = arc.EndAngle * Math.PI / 180.0;
 
                             // P1 (Start Point)
@@ -1893,6 +1898,8 @@ namespace RobTeach.Views
                             break;
                         case DxfCircle circle:
                             newTrajectory.PrimitiveType = "Circle";
+                            currentPass.Trajectories.Add(newTrajectory);
+                            trajectoryToSelect = newTrajectory;
                             // newTrajectory.CircleCenter = circle.Center; // Replaced by 3 points
                             // newTrajectory.CircleRadius = circle.Radius; // Replaced by 3 points
                             // newTrajectory.CircleNormal = circle.Normal; // Will be derived from 3 points or stored if needed
@@ -1957,10 +1964,11 @@ namespace RobTeach.Views
                     {
                         PopulateTrajectoryPoints(newTrajectory);
                         newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory); // Set default runtime
-                        currentPass.Trajectories.Add(newTrajectory);
+                        // This was the source of the bug for non-polygon types. It was moved inside the type-specific handlers.
+                        // currentPass.Trajectories.Add(newTrajectory);
                         AppLogger.Log($"Trajectory added to pass '{currentPass.PassName}': Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'.", LogLevel.Info);
                         isConfigurationDirty = true;
-                        trajectoryToSelect = newTrajectory; // Mark this new trajectory for selection
+                        // trajectoryToSelect = newTrajectory; // Also moved
                     }
                 }
 

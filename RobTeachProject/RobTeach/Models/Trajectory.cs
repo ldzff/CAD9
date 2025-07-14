@@ -153,6 +153,7 @@ namespace RobTeach.Models
                     details = $"Circle (P1:{CirclePoint1.Coordinates}, P2:{CirclePoint2.Coordinates}, P3:{CirclePoint3.Coordinates})";
                     break;
                 case "Polygon":
+                    System.Diagnostics.Debug.WriteLine($"[DEBUG] Trajectory.ToString(): Formatting polygon with {Vertices.Count} vertices.");
                     details = $"Polygon {{{string.Join(",", Vertices.Select(v => $"({v.X:F2},{v.Y:F2})"))}}}";
                     break;
                 default:
