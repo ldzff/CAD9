@@ -149,14 +149,7 @@ namespace RobTeach.Models
                     details = $"Circle (P1:{CirclePoint1.Coordinates}, P2:{CirclePoint2.Coordinates}, P3:{CirclePoint3.Coordinates})";
                     break;
                 case "Polygon":
-                    if (Points.Count > 0)
-                    {
-                        details = $"Polygon {{{string.Join(",", Points.Select(p => $"({p.X:F2},{p.Y:F2})"))}}}";
-                    }
-                    else
-                    {
-                        details = "Polygon (Points not populated)";
-                    }
+                    details = $"Polygon ({Points.Count} vertices)";
                     break;
                 default:
                     // Use EntityType if PrimitiveType is not set or recognized, then fallback to DXF entity type
