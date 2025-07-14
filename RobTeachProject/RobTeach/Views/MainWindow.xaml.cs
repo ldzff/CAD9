@@ -1829,31 +1829,16 @@ namespace RobTeach.Views
                     switch (dxfEntity)
                     {
                         case DxfLwPolyline polyline:
-                            Debug.WriteLine("[LOG] OnCadEntityClicked: DxfLwPolyline selected.");
-                            newTrajectory.PrimitiveType = "Polygon";
-                            var vertices = polyline.Vertices.Select(v => new Point(v.X, v.Y)).ToList();
-
-                            // Find the starting vertex (closest to bottom-left)
-                            int startIndex = FindBottomLeftVertexIndex(vertices);
-                            var orderedVertices = new List<Point>();
-                            for (int i = 0; i < vertices.Count; i++)
-                            {
-                                orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
-                            }
-                            newTrajectory.Vertices = orderedVertices;
-                            newTrajectory.Points = orderedVertices;
-                            Debug.WriteLine($"[LOG] OnCadEntityClicked: Populated trajectory with {newTrajectory.Vertices.Count} vertices. First vertex: ({newTrajectory.Vertices[0].X}, {newTrajectory.Vertices[0].Y})");
-                            currentPass.Trajectories.Add(newTrajectory);
-                            Debug.WriteLine($"[LOG] OnCadEntityClicked: Added polygon trajectory to pass. Total trajectories in pass: {currentPass.Trajectories.Count}");
-                            trajectoryToSelect = newTrajectory;
-                            // This was the fix from before, but it needs to be combined with the UI refresh calls before returning.
+                            var polygonTrajectory = CreatePolygonTrajectoryFromPolyline(polyline);
+                            currentPass.Trajectories.Add(polygonTrajectory);
+                            trajectoryToSelect = polygonTrajectory;
                             RefreshCurrentPassTrajectoriesListBox();
                             CurrentPassTrajectoriesListBox.SelectedItem = trajectoryToSelect;
                             CurrentPassTrajectoriesListBox.Items.Refresh();
                             RefreshCadCanvasHighlights();
                             UpdateDirectionIndicator();
                             UpdateOrderNumberLabels();
-                            return; // <-- THE CRITICAL FIX
+                            return;
                         case DxfLine line:
                             newTrajectory.PrimitiveType = "Line";
                             double p1DistSq = line.P1.X * line.P1.X + line.P1.Y * line.P1.Y + line.P1.Z * line.P1.Z;
@@ -3040,14 +3025,24 @@ namespace RobTeach.Views
                                 IsReversed = false // Default
                             };
                             // Populate geometric properties for the new trajectory
-                            switch (hitDxfEntity) // Safe due to null check above
+                            if (hitDxfEntity is DxfLwPolyline polyline)
                             {
-                                case DxfLine line:
-                                    newTrajectory.PrimitiveType = "Line";
-                                    newTrajectory.LineStartPoint = line.P1;
-                                    newTrajectory.LineEndPoint = line.P2;
-                                    break;
-                                case DxfArc arc:
+                                var polygonTrajectory = CreatePolygonTrajectoryFromPolyline(polyline);
+                                currentPass.Trajectories.Add(polygonTrajectory);
+                                itemsAddedCount++;
+                                addedTrajectoryInfo.Add($"Type 'Polygon', EntityHandle '{polygonTrajectory.OriginalEntityHandle}'");
+                                continue; // Skip the generic trajectory creation below
+                            }
+                            else
+                            {
+                                switch (hitDxfEntity) // Safe due to null check above
+                                {
+                                    case DxfLine line:
+                                        newTrajectory.PrimitiveType = "Line";
+                                        newTrajectory.LineStartPoint = line.P1;
+                                        newTrajectory.LineEndPoint = line.P2;
+                                        break;
+                                    case DxfArc arc:
                                     newTrajectory.PrimitiveType = "Arc";
                                     // Populate ArcPoint1, ArcPoint2, ArcPoint3 from DxfArc
                                     double startRadMarquee = arc.StartAngle * Math.PI / 180.0;
@@ -3126,12 +3121,16 @@ namespace RobTeach.Views
                                 default:
                                     newTrajectory.PrimitiveType = hitDxfEntity.GetType().Name; // Fallback
                                     break;
+                                }
                             }
-                            PopulateTrajectoryPoints(newTrajectory);
-                            newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory); // Set default runtime
-                            currentPass.Trajectories.Add(newTrajectory);
-                            addedTrajectoryInfo.Add($"Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'");
-                            itemsAddedCount++;
+                            if (hitDxfEntity.GetType() != typeof(DxfLwPolyline))
+                            {
+                                PopulateTrajectoryPoints(newTrajectory);
+                                newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory); // Set default runtime
+                                currentPass.Trajectories.Add(newTrajectory);
+                                addedTrajectoryInfo.Add($"Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'");
+                                itemsAddedCount++;
+                            }
                         }
                     }
                     if (itemsAddedCount > 0)
@@ -4009,6 +4008,32 @@ namespace RobTeach.Views
             double maxY = points.Max(p => p.Y);
 
             return new Rect(minX, minY, maxX - minX, maxY - minY);
+        }
+
+        private Trajectory CreatePolygonTrajectoryFromPolyline(DxfLwPolyline polyline)
+        {
+            var newTrajectory = new Trajectory
+            {
+                OriginalDxfEntity = polyline,
+                EntityType = polyline.GetType().Name,
+                IsReversed = false,
+                PrimitiveType = "Polygon"
+            };
+
+            var vertices = polyline.Vertices.Select(v => new Point(v.X, v.Y)).ToList();
+            int startIndex = FindBottomLeftVertexIndex(vertices);
+            var orderedVertices = new List<Point>();
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                orderedVertices.Add(vertices[(startIndex + i) % vertices.Count]);
+            }
+            newTrajectory.Vertices = orderedVertices;
+            newTrajectory.Points = orderedVertices;
+
+            PopulateTrajectoryPoints(newTrajectory);
+            newTrajectory.Runtime = TrajectoryUtils.CalculateMinRuntime(newTrajectory);
+
+            return newTrajectory;
         }
 
         private int FindBottomLeftVertexIndex(List<Point> vertices)
