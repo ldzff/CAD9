@@ -1,5 +1,4 @@
 using RobTeach.Models;
-using System.Windows; // For Point
 using System; // For Math
 
 namespace RobTeach.Utils
@@ -16,9 +15,9 @@ namespace RobTeach.Utils
             double length = 0.0;
             for (int i = 0; i < trajectory.Points.Count - 1; i++)
             {
-                Point p1 = trajectory.Points[i];
-                Point p2 = trajectory.Points[i + 1];
-                length += Point.Subtract(p2, p1).Length;
+                var p1 = trajectory.Points[i];
+                var p2 = trajectory.Points[i + 1];
+                length += (p2 - p1).Length;
             }
             return length / 1000.0; // Assuming points are in mm, convert to meters
         }

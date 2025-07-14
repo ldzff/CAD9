@@ -366,12 +366,12 @@ namespace RobTeach.Views
                     // ToolTip = $"Order: {i + 1}, Entity: {selectedTrajectory.PrimitiveType}" // Optional: add a tooltip
                 };
 
-                Point anchorPoint;
+                DxfPoint anchorPoint;
                 if (selectedTrajectory.PrimitiveType == "Line" && selectedTrajectory.Points.Count >= 2)
                 {
-                    Point p_start = selectedTrajectory.Points[0];
-                    Point p_end = selectedTrajectory.Points[selectedTrajectory.Points.Count - 1];
-                    anchorPoint = new Point((p_start.X + p_end.X) / 2, (p_start.Y + p_end.Y) / 2);
+                    DxfPoint p_start = selectedTrajectory.Points[0];
+                    DxfPoint p_end = selectedTrajectory.Points[selectedTrajectory.Points.Count - 1];
+                    anchorPoint = new DxfPoint((p_start.X + p_end.X) / 2, (p_start.Y + p_end.Y) / 2, (p_start.Z + p_end.Z) / 2);
                 }
                 else // For Arcs, Circles, or Lines with < 2 points (though points.Any() is already checked)
                 {
@@ -507,9 +507,9 @@ namespace RobTeach.Views
                     StrokeThickness = 1.5 * scale
                 };
 
-                List<System.Windows.Point> points = trajectoryInLoop.Points;
-                Point arrowStartPoint = new Point();
-                Point arrowEndPoint = new Point();
+                List<DxfPoint> points = trajectoryInLoop.Points;
+                DxfPoint arrowStartPoint = new DxfPoint();
+                DxfPoint arrowEndPoint = new DxfPoint();
                 bool addIndicator = false;
 
                 switch (trajectoryInLoop.PrimitiveType)
@@ -517,14 +517,14 @@ namespace RobTeach.Views
                     case "Line":
                         if (points.Count >= 2)
                         {
-                            Point p_start = points[0];
-                            Point p_end = points[points.Count - 1];
-                            Point midPoint = new Point((p_start.X + p_end.X) / 2, (p_start.Y + p_end.Y) / 2);
-                            Vector direction = p_end - p_start;
+                            DxfPoint p_start = points[0];
+                            DxfPoint p_end = points[points.Count - 1];
+                            DxfPoint midPoint = new DxfPoint((p_start.X + p_end.X) / 2, (p_start.Y + p_end.Y) / 2, (p_start.Z + p_end.Z) / 2);
+                            DxfVector direction = p_end - p_start;
 
                             if (direction.Length > 0)
                             {
-                                direction.Normalize();
+                                direction = direction.Normalize();
                                 arrowStartPoint = midPoint - direction * (fixedArrowLineLength * scale / 2.0);
                                 arrowEndPoint = midPoint + direction * (fixedArrowLineLength * scale / 2.0);
                                 addIndicator = true;
@@ -534,13 +534,13 @@ namespace RobTeach.Views
                     case "Arc":
                         if (points.Count >= 2)
                         {
-                            Point p0 = points[0]; // First point on arc
-                            Point p1 = points[1]; // Second point to determine initial tangent
-                            Vector direction = p1 - p0;
+                            DxfPoint p0 = points[0]; // First point on arc
+                            DxfPoint p1 = points[1]; // Second point to determine initial tangent
+                            DxfVector direction = p1 - p0;
 
                             if (direction.Length > 0.001) // Check for non-zero length
                             {
-                                direction.Normalize();
+                                direction = direction.Normalize();
                                 // Center the short arrow around p0
                                 arrowStartPoint = p0 - direction * (fixedArrowLineLength * scale / 2.0);
                                 arrowEndPoint = p0 + direction * (fixedArrowLineLength * scale / 2.0);
@@ -551,13 +551,13 @@ namespace RobTeach.Views
                     case "Circle":
                         if (points.Count >= 2)
                         {
-                            Point p0 = points[0]; // First point on circumference
-                            Point p1 = points[1]; // Second point to determine initial tangent
-                            Vector direction = p1 - p0;
+                            DxfPoint p0 = points[0]; // First point on circumference
+                            DxfPoint p1 = points[1]; // Second point to determine initial tangent
+                            DxfVector direction = p1 - p0;
 
                             if (direction.Length > 0)
                             {
-                                direction.Normalize();
+                                direction = direction.Normalize();
                                 // Center the short arrow around p0
                                 arrowStartPoint = p0 - direction * (fixedArrowLineLength * scale / 2.0);
                                 arrowEndPoint = p0 + direction * (fixedArrowLineLength * scale / 2.0);
@@ -572,8 +572,8 @@ namespace RobTeach.Views
 
                 if (addIndicator && arrowStartPoint != arrowEndPoint)
                 {
-                    newIndicator.StartPoint = arrowStartPoint;
-                    newIndicator.EndPoint = arrowEndPoint;
+                    newIndicator.StartPoint = new System.Windows.Point(arrowStartPoint.X, arrowStartPoint.Y);
+                    newIndicator.EndPoint = new System.Windows.Point(arrowEndPoint.X, arrowEndPoint.Y);
                     System.Windows.Controls.Panel.SetZIndex(newIndicator, 99); // Set a high Z-index
                     CadCanvas.Children.Add(newIndicator);
                     _directionIndicators.Add(newIndicator);
@@ -3077,6 +3077,7 @@ namespace RobTeach.Views
                                 currentPass.Trajectories.Add(polygonTrajectory);
                                 itemsAddedCount++;
                                 addedTrajectoryInfo.Add($"Type 'Polygon', EntityHandle '{polygonTrajectory.OriginalEntityHandle}'");
+                                trajectoryToSelect = polygonTrajectory; // Set the last created trajectory as the one to be selected
                                 continue; // Skip the generic trajectory creation below
                             }
                             else
@@ -3176,6 +3177,7 @@ namespace RobTeach.Views
                                 currentPass.Trajectories.Add(newTrajectory);
                                 addedTrajectoryInfo.Add($"Type '{newTrajectory.PrimitiveType}', EntityHandle '{newTrajectory.OriginalEntityHandle}'");
                                 itemsAddedCount++;
+                                trajectoryToSelect = newTrajectory;
                             }
                         }
                     }
